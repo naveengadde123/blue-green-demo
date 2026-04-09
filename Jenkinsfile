@@ -10,12 +10,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
-            steps {
-                git 'https://github.com/naveengadde123/blue-green-demo.git'
-            }
-        }
-
         stage('Build Image') {
             steps {
                 sh 'docker build -t $IMAGE .'
@@ -60,11 +54,21 @@ pipeline {
                 script {
                     if (env.CURRENT == "blue") {
                         sh '''
-                        sudo sed -i 's/5001/5002/' /etc/nginx/sites-available/default
+                        echo "server {
+                            listen 80;
+                            location / {
+                                proxy_pass http://127.0.0.1:5002;
+                            }
+                        }" | sudo tee /etc/nginx/sites-available/default
                         '''
                     } else {
                         sh '''
-                        sudo sed -i 's/5002/5001/' /etc/nginx/sites-available/default
+                        echo "server {
+                            listen 80;
+                            location / {
+                                proxy_pass http://127.0.0.1:5001;
+                            }
+                        }" | sudo tee /etc/nginx/sites-available/default
                         '''
                     }
                     sh 'sudo systemctl reload nginx'
