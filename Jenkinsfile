@@ -3,9 +3,6 @@ pipeline {
 
     environment {
         IMAGE = "bluegreen-app"
-        BLUE = "blue-container"
-        GREEN = "green-container"
-        CURRENT = "blue"
     }
 
     stages {
@@ -16,7 +13,7 @@ pipeline {
             }
         }
 
-        stage('Check Running Container') {
+        stage('Check Current Live') {
             steps {
                 script {
                     def blueRunning = sh(script: "docker ps -q -f name=blue-container", returnStdout: true).trim()
@@ -25,6 +22,7 @@ pipeline {
                     } else {
                         env.CURRENT = "green"
                     }
+                    echo "Current running: ${env.CURRENT}"
                 }
             }
         }
@@ -33,16 +31,16 @@ pipeline {
             steps {
                 script {
                     if (env.CURRENT == "blue") {
+                        // Deploy GREEN
                         sh '''
-                        docker stop green-container || true
-                        docker rm green-container || true
-                        docker run -d -p 5001:5000 -e VERSION=BLUE --name blue-container bluegreen-app
+                        docker rm -f green-container || true
+                        docker run -d -p 5002:5000 -e VERSION=GREEN --name green-container bluegreen-app
                         '''
                     } else {
+                        // Deploy BLUE
                         sh '''
-                        docker stop blue-container || true
-                        docker rm blue-container || true
-                        docker run -d -p 5002:5000 -e VERSION=GREEN --name green-container bluegreen-app
+                        docker rm -f blue-container || true
+                        docker run -d -p 5001:5000 -e VERSION=BLUE --name blue-container bluegreen-app
                         '''
                     }
                 }
@@ -53,6 +51,7 @@ pipeline {
             steps {
                 script {
                     if (env.CURRENT == "blue") {
+                        // Switch to GREEN
                         sh '''
                         echo "server {
                             listen 80;
@@ -62,6 +61,7 @@ pipeline {
                         }" | sudo tee /etc/nginx/sites-available/default
                         '''
                     } else {
+                        // Switch to BLUE
                         sh '''
                         echo "server {
                             listen 80;
