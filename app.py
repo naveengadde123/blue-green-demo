@@ -5,7 +5,8 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Hello from Blue-Green Deployment!"
+    version = os.getenv("VERSION", "UNKNOWN")
+    return f"Hello from {version} deployment!"
 
 @app.route('/health')
 def health():
