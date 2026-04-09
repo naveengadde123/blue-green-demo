@@ -2,44 +2,50 @@ pipeline {
     agent any
 
     environment {
-        BLUE_PORT = "3000"
-        GREEN_PORT = "3001"
+        IMAGE = "bluegreen-app"
+        BLUE = "blue-container"
+        GREEN = "green-container"
     }
 
     stages {
 
-        stage('Install Dependencies') {
+        stage('Clone Code') {
             steps {
-                bat 'npm install'
+                git 'https://github.com/naveengadde123/blue-green-demo'
             }
         }
 
-        stage('Deploy to GREEN') {
+        stage('Build Image') {
             steps {
-                echo "Deploying to GREEN..."
-
-                bat '''
-                set PORT=%GREEN_PORT%
-                start /B node app.js
-                '''
+                sh 'docker build -t $IMAGE .'
             }
         }
 
-        stage('Test GREEN') {
+        stage('Deploy Green') {
             steps {
-                echo "Testing GREEN..."
-
-                bat '''
-                curl http://localhost:%GREEN_PORT%
+                sh '''
+                docker stop $GREEN || true
+                docker rm $GREEN || true
+                docker run -d -p 5002:5000 --name $GREEN $IMAGE
                 '''
             }
         }
 
         stage('Switch Traffic') {
             steps {
-                echo "Switching traffic to GREEN..."
+                sh '''
+                sudo sed -i 's/5001/5002/' /etc/nginx/sites-available/default
+                sudo systemctl reload nginx
+                '''
+            }
+        }
 
-                echo "Now GREEN is LIVE on port 3001"
+        stage('Stop Blue') {
+            steps {
+                sh '''
+                docker stop $BLUE || true
+                docker rm $BLUE || true
+                '''
             }
         }
     }

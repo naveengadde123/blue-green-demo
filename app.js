@@ -1,9 +1,8 @@
-const http = require('http');
+from flask import Flask
+app = Flask(__name__)
 
-const PORT = process.env.PORT || 3000;
+@app.route('/')
+def home():
+    return "Hello from Blue-Green Deployment!"
 
-http.createServer((req, res) => {
-  res.end(`Running on port ${PORT}`);
-}).listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
-});
+app.run(host='0.0.0.0', port=5000)
