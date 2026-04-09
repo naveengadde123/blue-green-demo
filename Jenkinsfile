@@ -36,13 +36,13 @@ pipeline {
                         sh '''
                         docker stop green-container || true
                         docker rm green-container || true
-                        docker run -d -p 5002:5000 --name green-container bluegreen-app
+                        docker run -d -p 5001:5000 -e VERSION=BLUE --name blue-container bluegreen-app
                         '''
                     } else {
                         sh '''
                         docker stop blue-container || true
                         docker rm blue-container || true
-                        docker run -d -p 5001:5000 --name blue-container bluegreen-app
+                        docker run -d -p 5002:5000 -e VERSION=GREEN --name green-container bluegreen-app
                         '''
                     }
                 }
